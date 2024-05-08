@@ -1,30 +1,42 @@
 import sys
 import random
 import matplotlib.pyplot as plt
+import numpy as np
 
 # Asignacion de Parametros de Usuario
-# ---------------------------------------------------------------------------------------------- #
+# -----------------------------------------------------------------------------------------------------------------------------------------------
 if (
     len(sys.argv) != 11
     or sys.argv[1] != "-c"
     or sys.argv[3] != "-n"
+    or sys.argv[5] != "-e"
     or sys.argv[7] != "-s"
     or sys.argv[9] != "-a"
 ):
     print(
-        "Uso: python programa.py -c <num_corridas> -n <nro_tiradas> -e <nro_elegido> -s <m: martingale | d: d´alambert | f:fibonacci | p:paroli> -a <i:infinito | f:finito>"
+        "Uso: python programa.py -c <num_corridas> -n <nro_tiradas> -e <color_elegido> -s <m: martingale | d: d´alambert | f:fibonacci | p:paroli> -a <i:infinito | f:finito>"
     )
     sys.exit(1)
 
-if sys.argv[5] == "-e":
-    nro_elegido = int(sys.argv[6])
-
+# asignamos el valor del capital inicial
 CAPITAL_DADO = 50
 
+# asignamos el color elegido
+if sys.argv[6] == "r":
+    color_elegido = "rojo"
+elif sys.argv[6] == "n":
+    color_elegido = "negro"
+else:
+    print("Estrategia inexistente. Opciones: <n: negro | r: rojo>")
+    sys.exit(1)
+
+# asignamos cantidad de corridas
 corridas = int(sys.argv[2])
 
+# asignamos cantidad de tiradas
 tiradas = int(sys.argv[4])
 
+# asignamos estrategia
 if sys.argv[8] == "m":
     estrategia = "martingale"
 elif sys.argv[8] == "d":
@@ -39,6 +51,7 @@ else:
     )
     sys.exit(1)
 
+# asignamos tipo de capital
 if sys.argv[10] == "i":
     capital = "infinito"
 elif sys.argv[10] == "f":
@@ -49,19 +62,10 @@ else:
 
 
 # Definicion de Funciones
-# ---------------------------------------------------------------------------------------------- #
-### PREGUNTAS AL PROFESOR
-### - como funciona el infinito; literalmente capital = float("inf") o simplemente no se corta cuando entra en bancarrota
-### - se puede apostar a un numero solo?
-### - estrategia paroli - a veces se rompe
-### - informe
-
-
+# -----------------------------------------------------------------------------------------------------------------------------------------------
 def tirada():
     """emite un valor aleatorio entre 0 y 36"""
     numero = random.randint(0, 36)
-    # if numero == 0:
-    #     color = "verde"
     if numero % 2 == 0:
         color = "rojo"
     else:
@@ -74,29 +78,27 @@ def martingale(color, apuesta_inicial):
     jugadas = 0
     pozo = CAPITAL_DADO
     while jugadas != tiradas:
-        print(tiradas, jugadas)
         cont = 1
         apostado = apuesta_inicial
         while cont <= 5 and jugadas != tiradas:
-            if pozo >= apostado or capital=="infinito":  # capaz chequear bancarrota aca
+            if pozo >= apostado or capital == "infinito":
                 jugadas += 1
                 res_numero, res_color = tirada()
-                resultados.append(res_numero)
                 if res_color == color:
                     pozo += apostado
                     apostado = apuesta_inicial
                     cont = 1
+                    tiradas_exitosas.append(jugadas)
                 else:
                     pozo -= apostado
                     cont += 1
                     apostado *= 2
                 capital_corrida_n.append(pozo)
-            elif pozo <= apostado and capital=="finito":
+            elif pozo <= apostado and capital == "finito":
                 pozo = "bancarrota"
                 break
         if pozo == "bancarrota":
             break
-    return pozo
 
 
 def dalambert(color, apuesta_inicial):
@@ -106,12 +108,12 @@ def dalambert(color, apuesta_inicial):
     capital_corrida_n.append(pozo)
     apostado = apuesta_inicial
     while jugadas != tiradas:
-        if pozo > 0:
+        if pozo > 0 or capital == "infinito":
             jugadas += 1
             res_numero, res_color = tirada()
-            resultados.append(res_numero)
             if res_color == color:
                 pozo += apostado
+                tiradas_exitosas.append(jugadas)
                 if apostado > 1:
                     apostado -= 1
             elif res_color != color:
@@ -121,7 +123,6 @@ def dalambert(color, apuesta_inicial):
         else:
             pozo = "bancarrota"
             break
-    return pozo
 
 
 def fibonacci(color, apuesta_inicial):
@@ -131,26 +132,23 @@ def fibonacci(color, apuesta_inicial):
     pozo = CAPITAL_DADO
     capital_corrida_n.append(pozo)
     apostado = apuesta_inicial
-    valores_apostados.append(apuesta_inicial)
-    valores_apostados.append(apuesta_inicial)
-    valores_apostados.append(apuesta_inicial)
+    for i in range(3):
+        valores_apostados.append(apuesta_inicial)
     while jugadas != tiradas:
-        if pozo >= valores_apostados[-1]:
+        if pozo >= valores_apostados[-1]:  # AGREGAR or capital == "infinito"
             jugadas += 1
             res_numero, res_color = tirada()
-            resultados.append(res_numero)
             if color != res_color:
                 pozo -= valores_apostados[-1]
                 valores_apostados.append(valores_apostados[-1] + valores_apostados[-2])
             elif color == res_color:
                 pozo += valores_apostados[-1]
                 valores_apostados.append(valores_apostados[-3])
+                tiradas_exitosas.append(jugadas)
             capital_corrida_n.append(pozo)
         else:
             pozo = "bancarrota"
             break
-
-    return pozo
 
 
 def paroli(color, apuesta_inicial):
@@ -164,14 +162,14 @@ def paroli(color, apuesta_inicial):
         victorias = 0
         proxima_apuesta = apuesta_inicial
         while victorias < 3 and jugadas != tiradas:
-            if pozo >= proxima_apuesta:
+            if pozo >= proxima_apuesta or capital == "infinito":
                 jugadas += 1
                 res_numero, res_color = tirada()
-                resultados.append(res_numero)
                 if res_color == color:
                     pozo += proxima_apuesta
                     proxima_apuesta *= 2
                     victorias += 1
+                    tiradas_exitosas.append(jugadas)
                 else:
                     pozo -= proxima_apuesta
                     proxima_apuesta = apuesta_inicial
@@ -180,10 +178,8 @@ def paroli(color, apuesta_inicial):
             else:
                 pozo = "bancarrota"
                 break
-            print(victorias)
         if pozo == "bancarrota":
             break
-    return pozo
 
 
 def graficar_evolucion_capital(evoluciones):
@@ -208,20 +204,34 @@ def graficar_evolucion_capital(evoluciones):
     plt.show()
 
 
+def graficar_tiradas_exitosas(tiradas_exitosas):
+    fig, ax = plt.subplots()
+    valores_unicos, frecuencias = np.unique(tiradas_exitosas, return_counts=True)
+    ax.bar(valores_unicos, frecuencias)
+    ax.set_xlabel("n (numero de tirada)")
+    ax.set_ylabel("Frecuencia Relativa")
+    ax.set_title("Frecuencia Relativa de ganar en la tirada n")
+    plt.show()
+
+
+# inicializacion de variables globales y programa principal
+# ------------------------------------------------------------------------------------------------------------------------------------------------
 evolucion_capital = []
-resultados = []
+# este arreglo contiene los numeros de tirada en los que el apostador acierta, para graficarlos
+tiradas_exitosas = []
+
 for i in range(corridas):
     capital_corrida_n = []
     resultados_corrida_n = []
-    color = "negro" if (nro_elegido % 2 == 0) else "rojo"
+    tiradas_exitosas_corrida_n = []
     if estrategia == "martingale":
-        martingale(color, apuesta_inicial=1)
+        martingale(color_elegido, apuesta_inicial=1)
     elif estrategia == "d'alambert":
-        dalambert(color, apuesta_inicial=5)
+        dalambert(color_elegido, apuesta_inicial=5)
     elif estrategia == "fibonacci":
-        fibonacci(color, apuesta_inicial=3)
+        fibonacci(color_elegido, apuesta_inicial=3)
     elif estrategia == "paroli":
-        paroli(color, apuesta_inicial=10)
+        paroli(color_elegido, apuesta_inicial=10)
     evolucion_capital.append(capital_corrida_n)
-    # print(len(evolucion_capital))
 graficar_evolucion_capital(evolucion_capital)
+graficar_tiradas_exitosas(tiradas_exitosas)
