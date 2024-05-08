@@ -40,9 +40,9 @@ else:
     sys.exit(1)
 
 if sys.argv[10] == "i":
-    capital = float("inf")
+    capital = "infinito"
 elif sys.argv[10] == "f":
-    capital = CAPITAL_DADO
+    capital = "finito"
 else:
     print("Capital Inexistente")
     sys.exit(1)
@@ -78,7 +78,7 @@ def martingale(color, apuesta_inicial):
         cont = 1
         apostado = apuesta_inicial
         while cont <= 5 and jugadas != tiradas:
-            if pozo >= apostado:  # capaz chequear bancarrota aca
+            if pozo >= apostado or capital=="infinito":  # capaz chequear bancarrota aca
                 jugadas += 1
                 res_numero, res_color = tirada()
                 resultados.append(res_numero)
@@ -91,7 +91,7 @@ def martingale(color, apuesta_inicial):
                     cont += 1
                     apostado *= 2
                 capital_corrida_n.append(pozo)
-            elif pozo <= apostado:
+            elif pozo <= apostado and capital=="finito":
                 pozo = "bancarrota"
                 break
         if pozo == "bancarrota":
@@ -163,7 +163,7 @@ def paroli(color, apuesta_inicial):
     while jugadas != tiradas:
         victorias = 0
         proxima_apuesta = apuesta_inicial
-        while victorias < 3:
+        while victorias < 3 and jugadas != tiradas:
             if pozo >= proxima_apuesta:
                 jugadas += 1
                 res_numero, res_color = tirada()
@@ -180,6 +180,7 @@ def paroli(color, apuesta_inicial):
             else:
                 pozo = "bancarrota"
                 break
+            print(victorias)
         if pozo == "bancarrota":
             break
     return pozo
@@ -200,7 +201,7 @@ def graficar_evolucion_capital(evoluciones):
         color="red",
     )
     plt.title("Flujo de Caja")
-    plt.legend()
+    # plt.legend()
     plt.grid(True)
     plt.xlabel("Número de tirada")
     plt.ylabel("Cantidad de Capital")
@@ -214,13 +215,13 @@ for i in range(corridas):
     resultados_corrida_n = []
     color = "negro" if (nro_elegido % 2 == 0) else "rojo"
     if estrategia == "martingale":
-        capital = martingale(color, apuesta_inicial=1)
+        martingale(color, apuesta_inicial=1)
     elif estrategia == "d'alambert":
-        capital = dalambert(color, apuesta_inicial=5)
+        dalambert(color, apuesta_inicial=5)
     elif estrategia == "fibonacci":
-        capital = fibonacci(color, apuesta_inicial=3)
+        fibonacci(color, apuesta_inicial=3)
     elif estrategia == "paroli":
-        capital = paroli(color, apuesta_inicial=10)
+        paroli(color, apuesta_inicial=10)
     evolucion_capital.append(capital_corrida_n)
-    print(len(evolucion_capital))
+    # print(len(evolucion_capital))
 graficar_evolucion_capital(evolucion_capital)
