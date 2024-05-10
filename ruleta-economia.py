@@ -19,7 +19,8 @@ if (
     sys.exit(1)
 
 # asignamos el valor del capital inicial
-CAPITAL_DADO = 50
+CAPITAL_DADO = 20000
+APUESTA_INICIAL = 2000
 
 # asignamos el color elegido
 if sys.argv[6] == "r":
@@ -135,7 +136,7 @@ def fibonacci(color, apuesta_inicial):
     for i in range(3):
         valores_apostados.append(apuesta_inicial)
     while jugadas != tiradas:
-        if pozo >= valores_apostados[-1]:  # AGREGAR or capital == "infinito"
+        if pozo >= valores_apostados[-1] or capital == "infinito":
             jugadas += 1
             res_numero, res_color = tirada()
             if color != res_color:
@@ -184,7 +185,6 @@ def paroli(color, apuesta_inicial):
 
 def graficar_evolucion_capital(evoluciones):
     """Grafica la evolución del capital a lo largo de las tiradas, durante una corrida dada"""
-    print(len(evoluciones))
     plt.figure(figsize=(10, 6))
     for e, evolucion in enumerate(evoluciones):
         plt.plot(
@@ -225,13 +225,13 @@ for i in range(corridas):
     resultados_corrida_n = []
     tiradas_exitosas_corrida_n = []
     if estrategia == "martingale":
-        martingale(color_elegido, apuesta_inicial=1)
+        martingale(color_elegido, APUESTA_INICIAL)
     elif estrategia == "d'alambert":
-        dalambert(color_elegido, apuesta_inicial=5)
+        dalambert(color_elegido, APUESTA_INICIAL)
     elif estrategia == "fibonacci":
-        fibonacci(color_elegido, apuesta_inicial=3)
+        fibonacci(color_elegido, APUESTA_INICIAL)
     elif estrategia == "paroli":
-        paroli(color_elegido, apuesta_inicial=10)
+        paroli(color_elegido, APUESTA_INICIAL)
     evolucion_capital.append(capital_corrida_n)
 graficar_evolucion_capital(evolucion_capital)
 graficar_tiradas_exitosas(tiradas_exitosas)
